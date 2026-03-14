@@ -12,9 +12,9 @@ workflows:
 
 jobs:
   build:
-    working_directory: ~/ExampleApplication
+    working_directory: ~/SimpleApplication
     docker:
-      - image: cimg/node:20.17.0
+      - image: cimg/node:20.17
 
     steps:
       - checkout
