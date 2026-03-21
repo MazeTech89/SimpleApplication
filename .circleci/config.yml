@@ -66,7 +66,7 @@ jobs:
             ssh-keyscan -H $EC2_PUBLIC_DNS >> ~/.ssh/known_hosts 2>/dev/null || true
       - run:
           name: audit-packages
-          command: npm audit
+          command: npm audit --audit-level=high
       - run:
           name: run-tests
           command: npm test

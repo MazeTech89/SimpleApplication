@@ -9,4 +9,4 @@ cd SimpleApplication/
 # Install application dependencies
 npm install
 # Start the application with the process name simple_app using pm2
-pm2 start ./bin/www -- name simple_app
+pm2 start ./bin/www --name simple_app

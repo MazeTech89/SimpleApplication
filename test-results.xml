@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuites name="Mocha Tests" time="0.0000" tests="1" failures="0">
-  <testsuite name="Root Suite" timestamp="2026-03-21T10:05:46" tests="0" time="0.0000" failures="0">
+<testsuites name="Mocha Tests" time="0.0010" tests="1" failures="0">
+  <testsuite name="Root Suite" timestamp="2026-03-21T10:18:27" tests="0" time="0.0000" failures="0">
   </testsuite>
-  <testsuite name="Basic sanity" timestamp="2026-03-21T10:05:46" tests="1" file="C:\Users\mase_\OneDrive\Desktop\CA 1 60% 13 March submission Local\SimpleApplication\test\test.js" time="0.0000" failures="0">
-    <testcase name="Basic sanity should pass" time="0.0000" classname="should pass">
+  <testsuite name="Basic sanity" timestamp="2026-03-21T10:18:27" tests="1" file="C:\Users\mase_\OneDrive\Desktop\CA 1 60% 13 March submission Local\SimpleApplication\test\test.js" time="0.0010" failures="0">
+    <testcase name="Basic sanity should pass" time="0.0010" classname="should pass">
     </testcase>
   </testsuite>
 </testsuites>
