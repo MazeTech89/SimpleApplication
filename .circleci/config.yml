@@ -34,7 +34,7 @@ jobs:
         name: update-npm
         command: 'sudo npm install -g npm@latest'
 
-      - restore cache:
+      - restore_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
 
       - run:
@@ -50,23 +50,28 @@ jobs:
           paths:
             - ./node_modules
 
-      - run: npm test run
+      - run: 
+        name: run-tests
         command: npm run test
 
-      - run: name: docker-login
+      - run: 
+        name: docker-login
         command: docker-login -u $MAZETECHSOLUTION -p $DOCKERHUB_maze4real
       
-      - run: name: build-docker-image
+      - run: 
+        name: build-docker-image
         command: docker build -t maze4real/simpleapplication:latest .
-      - run: name: push-docker-image
+
+      - run:
+        name: push-docker-image
         command: docker push maze4real/simpleapplication:latest
 
        
 
 
 
-    deploy:
-      working_directory: ~/SimpleApplication
+  deploy:
+    working_directory: ~/SimpleApplication
       docker:
         - image: cimg/node:20.17
 
