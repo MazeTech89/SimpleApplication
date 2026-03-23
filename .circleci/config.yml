@@ -25,8 +25,16 @@ jobs:
 
     steps:
       - checkout
+      - setup_remote_docker
 
       - restore_cache:
+          key: dependency-cache-{{ checksum "package-lock.json" }}
+
+      - run:  
+        name: update-npm
+        command: 'sudo npm install -g npm@latest'
+
+      - restore cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
 
       - run:
@@ -41,36 +49,53 @@ jobs:
           key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
             - ./node_modules
-  deploy:
-    working_directory: ~/SimpleApplication
-    docker:
-      - image: cimg/node:20.17
 
-    steps:
-      - checkout
+      - run: npm test run
+        command: npm run test
 
-      - run:
+      - run: name: docker-login
+        command: docker-login -u $MAZETECHSOLUTION -p $DOCKERHUB_maze4real
+      
+      - run: name: build-docker-image
+        command: docker build -t maze4real/simpleapplication:latest .
+      - run: name: push-docker-image
+        command: docker push maze4real/simpleapplication:latest
+
+       
+
+
+
+    deploy:
+      working_directory: ~/SimpleApplication
+      docker:
+        - image: cimg/node:20.17
+
+      steps:
+        - checkout
+        - setup_remote_docker
+
+        - run:
           name: check-environment
           command: |
             if [ -z "$EC2_PUBLIC_DNS" ]; then
               echo "EC2_PUBLIC_DNS not set"
               exit 1
             fi
-      - add_ssh_keys:
+        - add_ssh_keys:
           fingerprints:
             - "SHA256:9ZvMy3J58iuA650HCJKu3fACGzm+hygP9uwZEN6aGIs"
-      - run:
+        - run:
           name: add-host-to-known-hosts
           command: |
             mkdir -p ~/.ssh
             ssh-keyscan -H $EC2_PUBLIC_DNS >> ~/.ssh/known_hosts 2>/dev/null || true
-      - run:
+        - run:
           name: audit-packages
-          command: npm audit --audit-level=high
-      - run:
+          command: npm audit
+        - run:
           name: run-tests
           command: npm test
-      - run:
+        - run:
           name: deploy-to-production
           command: |
             ssh -T -o ConnectTimeout=60 ubuntu@$EC2_PUBLIC_DNS \<< 'EOF'
@@ -80,7 +105,7 @@ jobs:
               chmod +x deploy.sh
               ./deploy.sh
             EOF
-      - run:
+        - run:
           name: verify-deployment
           command: |
             sleep 15
