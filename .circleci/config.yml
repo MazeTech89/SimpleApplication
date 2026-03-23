@@ -63,12 +63,12 @@ jobs:
       # Build Docker image
       - run:
           name: build-docker-image
-          command: docker build -t mazetechsolution/simpleapplication:latest .
+          command: docker build -t mazetechsolution/SimpleApplication:latest .
 
       # Push Docker image
       - run:
           name: push-docker-image
-          command: docker push mazetechsolution/simpleapplication:latest
+          command: docker push mazetechsolution/SimpleApplication:latest
 
   deploy:
     working_directory: ~/SimpleApplication
@@ -128,7 +128,7 @@ jobs:
           command: |
             sleep 15
             MAX_ATTEMPTS=5
-            ATTEMPT=1
+            ATTEMPT=1   
             WAIT_TIME=2
 
             until [ $ATTEMPT -gt $MAX_ATTEMPTS ]; do
