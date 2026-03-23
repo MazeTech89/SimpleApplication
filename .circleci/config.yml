@@ -58,7 +58,7 @@ jobs:
       - run:
           name: docker-login
           command: |
-            echo "$DOCKER_maze4real" | docker login -u "$MAZETECHSOLUTION" --password-stdin
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
       # Build Docker image
       - run:
