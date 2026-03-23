@@ -63,12 +63,12 @@ jobs:
       # Build Docker image
       - run:
           name: build-docker-image
-          command: docker build -t maze4real/simpleapplication:latest .
+          command: docker build -t mazetechsolution/simpleapplication:latest .
 
       # Push Docker image
       - run:
           name: push-docker-image
-          command: docker push maze4real/simpleapplication:latest
+          command: docker push mazetechsolution/simpleapplication:latest
 
   deploy:
     working_directory: ~/SimpleApplication
