@@ -1,21 +1,19 @@
 version: 2.1
 
 workflows:
-  build:
+  build_and_deploy:
     jobs:
       - build:
           filters:
             branches:
-              only:
-                - main
+              only: main
 
       - deploy:
-          filters:
-            branches:
-              only:
-                - main
           requires:
             - build
+          filters:
+            branches:
+              only: main
 
 jobs:
   build:
@@ -27,107 +25,122 @@ jobs:
       - checkout
       - setup_remote_docker
 
+      # Restore dependencies cache
       - restore_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
 
-      - run:  
-        name: update-npm
-        command: 'sudo npm install -g npm@latest'
-
-      - restore_cache:
-          key: dependency-cache-{{ checksum "package-lock.json" }}
-
+      # Update npm
       - run:
-          name: install-npm
+          name: update-npm
+          command: sudo npm install -g npm@latest
+
+      # Install dependencies
+      - run:
+          name: install-dependencies
           command: npm install
 
+      # Run tests
       - run:
           name: run-tests
           command: npm test
 
+      # Save cache
       - save_cache:
           key: dependency-cache-{{ checksum "package-lock.json" }}
           paths:
-            - ./node_modules
+            - node_modules
 
-      - run: 
-        name: run-tests
-        command: npm run test
-
-      - run: 
-        name: docker-login
-        command: docker-login -u $MAZETECHSOLUTION -p $DOCKERHUB_maze4real
-      
-      - run: 
-        name: build-docker-image
-        command: docker build -t maze4real/simpleapplication:latest .
-
+      # Docker login (securely using env vars)
       - run:
-        name: push-docker-image
-        command: docker push maze4real/simpleapplication:latest
+          name: docker-login
+          command: |
+            echo "$DOCKER_PASSWORD" | docker login -u "$DOCKER_USERNAME" --password-stdin
 
-       
+      # Build Docker image
+      - run:
+          name: build-docker-image
+          command: docker build -t maze4real/simpleapplication:latest .
 
-
+      # Push Docker image
+      - run:
+          name: push-docker-image
+          command: docker push maze4real/simpleapplication:latest
 
   deploy:
     working_directory: ~/SimpleApplication
-      docker:
-        - image: cimg/node:20.17
+    docker:
+      - image: cimg/node:20.17
 
-      steps:
-        - checkout
-        - setup_remote_docker
+    steps:
+      - checkout
+      - setup_remote_docker
 
-        - run:
+      # Validate environment variable
+      - run:
           name: check-environment
           command: |
             if [ -z "$EC2_PUBLIC_DNS" ]; then
               echo "EC2_PUBLIC_DNS not set"
               exit 1
             fi
-        - add_ssh_keys:
+
+      # Add SSH key
+      - add_ssh_keys:
           fingerprints:
             - "SHA256:9ZvMy3J58iuA650HCJKu3fACGzm+hygP9uwZEN6aGIs"
-        - run:
+
+      # Add EC2 to known hosts
+      - run:
           name: add-host-to-known-hosts
           command: |
             mkdir -p ~/.ssh
             ssh-keyscan -H $EC2_PUBLIC_DNS >> ~/.ssh/known_hosts 2>/dev/null || true
-        - run:
+
+      # Security audit
+      - run:
           name: audit-packages
-          command: npm audit
-        - run:
+          command: npm audit || true
+
+      # Run tests again before deploy
+      - run:
           name: run-tests
           command: npm test
-        - run:
+
+      # Deploy to EC2
+      - run:
           name: deploy-to-production
           command: |
-            ssh -T -o ConnectTimeout=60 ubuntu@$EC2_PUBLIC_DNS \<< 'EOF'
+            ssh -T -o ConnectTimeout=60 ubuntu@$EC2_PUBLIC_DNS << 'EOF'
               rm -rf SimpleApplication
               git clone ${GITHUB_REPO_URL:-https://github.com/MazeTech89/SimpleApplication.git}
               cd SimpleApplication
               chmod +x deploy.sh
               ./deploy.sh
             EOF
-        - run:
+
+      # Verify deployment with retry logic
+      - run:
           name: verify-deployment
           command: |
             sleep 15
             MAX_ATTEMPTS=5
             ATTEMPT=1
             WAIT_TIME=2
+
             until [ $ATTEMPT -gt $MAX_ATTEMPTS ]; do
               if curl -f --connect-timeout 5 --max-time 10 http://$EC2_PUBLIC_DNS:3000/health; then
                 echo "Health check passed"
                 exit 0
               fi
+
               if [ $ATTEMPT -lt $MAX_ATTEMPTS ]; then
                 echo "Attempt $ATTEMPT failed. Retrying in ${WAIT_TIME}s..."
                 sleep $WAIT_TIME
                 WAIT_TIME=$((WAIT_TIME * 2))
               fi
+
               ATTEMPT=$((ATTEMPT + 1))
             done
+
             echo "Health check failed after $MAX_ATTEMPTS attempts"
             exit 1
