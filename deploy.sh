@@ -4,7 +4,7 @@ set -e
 
 echo "🚀 Starting deployment..."
 
-# Ensure script runs in correct directory
+# Ensure script runs in correct directory.
 cd "$(dirname "$0")"
 
 # Install dependencies
